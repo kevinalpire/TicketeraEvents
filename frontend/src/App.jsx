@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 function App() {
   const [eventos, setEventos] = useState([]);
@@ -7,30 +7,64 @@ function App() {
   const [cupo, setCupo] = useState("");
   const [precio, setPrecio] = useState("");
 
-  const agregarEvento = () => {
+  useEffect(() => {
+    obtenerEventos();
+  }, []);
+
+  const obtenerEventos = async () => {
+    try {
+      const response = await fetch("http://localhost:3001/events");
+      const data = await response.json();
+      setEventos(data);
+    } catch (error) {
+      console.error("Error al obtener eventos:", error);
+    }
+  };
+
+  const agregarEvento = async () => {
     if (!nombre || !fecha || !cupo || !precio) {
       alert("Complete todos los campos");
       return;
     }
 
-    const nuevoEvento = {
-      id: Date.now(),
-      nombre,
-      fecha,
-      cupo,
-      precio,
-    };
+    try {
+      const response = await fetch("http://localhost:3001/events", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: nombre,
+          description: "Evento creado desde React",
+          date: fecha,
+          capacity: parseInt(cupo),
+          price: parseFloat(precio),
+        }),
+      });
 
-    setEventos([...eventos, nuevoEvento]);
+      if (response.ok) {
+        obtenerEventos();
 
-    setNombre("");
-    setFecha("");
-    setCupo("");
-    setPrecio("");
+        setNombre("");
+        setFecha("");
+        setCupo("");
+        setPrecio("");
+      }
+    } catch (error) {
+      console.error("Error al crear evento:", error);
+    }
   };
 
-  const eliminarEvento = (id) => {
-    setEventos(eventos.filter((evento) => evento.id !== id));
+  const eliminarEvento = async (id) => {
+    try {
+      await fetch(`http://localhost:3001/events/${id}`, {
+        method: "DELETE",
+      });
+
+      obtenerEventos();
+    } catch (error) {
+      console.error("Error al eliminar evento:", error);
+    }
   };
 
   return (
@@ -45,6 +79,7 @@ function App() {
         value={nombre}
         onChange={(e) => setNombre(e.target.value)}
       />
+
       <br /><br />
 
       <input
@@ -52,6 +87,7 @@ function App() {
         value={fecha}
         onChange={(e) => setFecha(e.target.value)}
       />
+
       <br /><br />
 
       <input
@@ -60,6 +96,7 @@ function App() {
         value={cupo}
         onChange={(e) => setCupo(e.target.value)}
       />
+
       <br /><br />
 
       <input
@@ -68,6 +105,7 @@ function App() {
         value={precio}
         onChange={(e) => setPrecio(e.target.value)}
       />
+
       <br /><br />
 
       <button onClick={agregarEvento}>
@@ -83,10 +121,10 @@ function App() {
       ) : (
         eventos.map((evento) => (
           <div key={evento.id}>
-            <h3>{evento.nombre}</h3>
-            <p>📅 Fecha: {evento.fecha}</p>
-            <p>👥 Cupo: {evento.cupo}</p>
-            <p>💰 Precio: Bs. {evento.precio}</p>
+            <h3>{evento.name}</h3>
+            <p>📅 Fecha: {evento.date}</p>
+            <p>👥 Cupo: {evento.capacity}</p>
+            <p>💰 Precio: Bs. {evento.price}</p>
 
             <button onClick={() => eliminarEvento(evento.id)}>
               Eliminar
