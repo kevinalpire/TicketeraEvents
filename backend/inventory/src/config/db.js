@@ -1,10 +1,8 @@
-/**
- * Módulo de conexión a PostgreSQL
- * Crea un pool de conexiones reutilizables a la BD ticketera
- * Permite que cualquier servicio ejecute queries sin abrir nuevas conexiones
- */
-const { Pool } = require('pg');
+const { Pool, types } = require("pg");
 require('dotenv').config();
+
+// OID 1114 = timestamp without time zone
+types.setTypeParser(1114, (value) => value);
 
 const pool = new Pool({
   host: process.env.DB_HOST,

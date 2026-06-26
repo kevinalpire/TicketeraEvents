@@ -1,127 +1,77 @@
-const { connect, StringCodec } = require('nats');
-require('dotenv').config();
-const pool = require('./db');
+const express = require("express");
+require("dotenv").config();
 
-const sc = StringCodec();
-let nc;
+const app = express();
 
-async function connectNATS() {
-  try {
-    nc = await connect({ servers: process.env.NATS_URL });
-    console.log(`✓ ${process.env.SERVICE_NAME} connected to NATS`);
-    subscribeToEvents();
-  } catch (err) {
-    console.error('NATS connection error:', err);
-    process.exit(1);
-  }
-}
+app.use(express.json());
 
-async function subscribeToEvents() {
-  const sub = nc.subscribe('ticket.purchase_requested');
-  
-  console.log('✓ Listening to ticket.purchase_requested');
+// Rutas
+const inventoryRoutes = require("./routes/inventoryRoutes");
+app.use("/inventory", inventoryRoutes);
 
-  for await (const msg of sub) {
-    try {
-      const purchaseData = JSON.parse(sc.decode(msg.data));
-      console.log('📨 Purchase request received:', purchaseData);
+// Servicio NATS
+const {
+    connectNATS,
+    getNatsConnection
+} = require("./services/natsService");
 
-      const { inventory_id, event_id, users, quantity } = purchaseData;
+// Servicio Inventory
+const {
+    subscribeToPurchase
+} = require("./services/inventoryService");
 
-      // Get event details
-      const eventResult = await pool.query(
-        'SELECT id, capacity FROM events WHERE id = $1',
-        [event_id]
-      );
+// CORS
+app.use((req, res, next) => {
 
-      if (eventResult.rows.length === 0) {
-        // Event not found - publish sold_out
-        await pool.query(
-          'UPDATE inventory SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
-          ['cancelled', inventory_id]
-        );
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type");
 
-        nc.publish('ticket.sold_out', JSON.stringify({
-          inventory_id,
-          event_id,
-          users,
-          quantity,
-          reason: 'Event not found',
-          timestamp: new Date().toISOString()
-        }));
-        console.log('❌ Event not found');
-        continue;
-      }
-
-      const event = eventResult.rows[0];
-
-      // Count reserved + confirmed entries
-      const reservedResult = await pool.query(
-        `SELECT COALESCE(SUM(quantity), 0) as booked 
-         FROM inventory 
-         WHERE event_id = $1 AND status IN ('reserved', 'confirmed')`,
-        [event_id]
-      );
-
-      const booked = parseInt(reservedResult.rows[0].booked);
-      const available = event.capacity - booked;
-
-      console.log(`Event ${event_id}: capacity=${event.capacity}, booked=${booked}, available=${available}, requested=${quantity}`);
-
-      if (available >= quantity) {
-        // RESERVE entries
-        await pool.query(
-          'UPDATE inventory SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
-          ['reserved', inventory_id]
-        );
-
-        // Publish success event
-        nc.publish('ticket.reserved', JSON.stringify({
-          inventory_id,
-          event_id,
-          users,
-          quantity,
-          timestamp: new Date().toISOString()
-        }));
-        
-        console.log('✅ Entries RESERVED (ready for payment)');
-      } else {
-        // Not enough capacity - REJECT
-        await pool.query(
-          'UPDATE inventory SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
-          ['cancelled', inventory_id]
-        );
-
-        nc.publish('ticket.sold_out', JSON.stringify({
-          inventory_id,
-          event_id,
-          users,
-          quantity,
-          available,
-          requested: quantity,
-          reason: 'Not enough capacity',
-          timestamp: new Date().toISOString()
-        }));
-        
-        console.log(`❌ SOLD OUT - only ${available} available`);
-      }
-    } catch (err) {
-      console.error('Error processing message:', err);
+    if (req.method === "OPTIONS") {
+        return res.sendStatus(200);
     }
-  }
-}
 
-async function start() {
-  await connectNATS();
-  console.log(`✓ Inventory service started`);
-}
+    next();
 
-start().catch(err => {
-  console.error('Failed to start service:', err);
-  process.exit(1);
 });
 
-process.on('SIGTERM', async () => {
-  if (nc) await nc.close();
-  process.exit(0);
+const PORT = process.env.PORT || 3002;
+
+async function start() {
+
+    try {
+
+        // Conectar con NATS
+        await connectNATS();
+
+        // Escuchar eventos de compra
+        subscribeToPurchase();
+
+        // Levantar servidor HTTP
+        app.listen(PORT, () => {
+            console.log(`✓ Inventory Service running on port ${PORT}`);
+        });
+
+    } catch (err) {
+
+        console.error("Error starting Inventory Service:", err);
+        process.exit(1);
+
+    }
+
+}
+
+start();
+
+// Cerrar conexión al terminar
+process.on("SIGTERM", async () => {
+
+    const nc = getNatsConnection();
+
+    if (nc) {
+        await nc.close();
+    }
+
+    process.exit(0);
+
 });
