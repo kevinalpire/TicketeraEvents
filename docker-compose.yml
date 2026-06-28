@@ -1,0 +1,124 @@
+version: '3.8'
+services:
+  nats:
+    image: nats:2.10-alpine
+    container_name: ticketera-nats
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    networks:
+      - ticketera-network
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: ticketera-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: comando123
+      POSTGRES_DB: ticketera
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    networks:
+      - ticketera-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ticketera"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  events:
+    build:
+      context: ./backend/events
+      dockerfile: dockerfile
+    container_name: ticketera-events
+    ports:
+      - "3001:3001"
+    env_file:
+      - ./backend/events/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    networks:
+      - ticketera-network
+    restart: unless-stopped
+
+  inventory:
+    build:
+      context: ./backend/inventory
+      dockerfile: dockerfile
+    container_name: ticketera-inventory
+    ports:
+      - "3002:3002"
+    env_file:
+      - ./backend/inventory/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    networks:
+      - ticketera-network
+    restart: unless-stopped
+
+  payments:
+    build:
+      context: ./backend/payments
+      dockerfile: dockerfile
+    container_name: ticketera-payments
+    ports:
+      - "3003:3003"
+    env_file:
+      - ./backend/payments/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    networks:
+      - ticketera-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: dockerfile
+    container_name: ticketera-frontend
+    ports:
+      - "80:80"
+    env_file:
+      - ./frontend/.env
+    depends_on:
+      - events
+      - inventory
+      - payments
+    networks:
+      - ticketera-network
+    restart: unless-stopped
+
+  adminer:
+    image: adminer:latest
+    container_name: ticketera-adminer
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+      ADMINER_DEFAULT_DB: ticketera
+    depends_on:
+      - postgres
+    networks:
+      - ticketera-network
+    restart: unless-stopped
+
+networks:
+  ticketera-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
