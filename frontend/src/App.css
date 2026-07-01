@@ -1,42 +1,417 @@
-#root {
-  max-width: 1280px;
+.app-shell {
+  width: min(1120px, 100% - 2rem);
   margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  padding: 2rem 0 3rem;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.hero {
+  margin-bottom: 1.5rem;
+  color: #132235;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
+.hero-kicker {
+  display: inline-block;
+  margin: 0;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  background: #ffb703;
+  color: #111;
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+}
+
+.hero h1 {
+  font-size: clamp(2rem, 3.4vw, 2.8rem);
+  margin: 0.6rem 0;
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.hero p {
+  margin: 0;
+  max-width: 72ch;
+  color: #314860;
+}
+
+.view-switch {
+  margin-top: 0.9rem;
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.panel {
+  border-radius: 20px;
+  background: #ffffffcc;
+  backdrop-filter: blur(2px);
+  border: 1px solid #e5e8ef;
+  box-shadow: 0 16px 40px -24px rgba(16, 24, 40, 0.45);
+  padding: 1.2rem;
+  margin-bottom: 1.25rem;
+}
+
+.panel h2 {
+  margin: 0 0 1rem;
+  color: #0f1d2d;
+}
+
+.event-form {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.event-form label {
+  display: grid;
+  gap: 0.4rem;
+  font-weight: 600;
+  color: #172a3f;
+}
+
+.event-form input,
+.event-form textarea {
+  width: 100%;
+  border: 1px solid #c9d2de;
+  border-radius: 10px;
+  padding: 0.7rem 0.75rem;
+  font-size: 0.95rem;
+  background: #fff;
+}
+
+.event-form input:focus,
+.event-form textarea:focus {
+  outline: 2px solid #8ecae6;
+  border-color: #8ecae6;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.btn {
+  border: 0;
+  border-radius: 10px;
+  padding: 0.65rem 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.16s ease, opacity 0.16s ease;
+}
+
+.btn-small {
+  padding: 0.4rem 0.7rem;
+  font-size: 0.82rem;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  opacity: 0.95;
+}
+
+.btn-primary {
+  background: #1d4ed8;
+  color: #fff;
+}
+
+.btn-danger {
+  background: #b42318;
+  color: #fff;
+}
+
+.btn-ticket {
+  background: #0f766e;
+  color: #fff;
+}
+
+.btn-muted {
+  background: #e8edf4;
+  color: #1d2939;
+}
+
+.feedback {
+  margin: 0.8rem 0 0;
+  border-radius: 10px;
+  padding: 0.6rem 0.75rem;
+  font-weight: 600;
+}
+
+.feedback.success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.feedback.error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.9rem;
+}
+
+.list-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.9rem;
+  color: #334155;
+}
+
+.event-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.9rem;
+}
+
+.event-card {
+  border: 1px solid #e3e9f2;
+  border-radius: 14px;
+  padding: 0.95rem;
+  background: #fff;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.event-id {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #667085;
+  font-weight: 700;
+}
+
+.event-card h3 {
+  margin: 0.1rem 0 0;
+  color: #0f1d2d;
+}
+
+.event-description {
+  margin: 0;
+  color: #334155;
+}
+
+.event-card ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.92rem;
+  color: #24364b;
+}
+
+.card-actions {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.empty-state {
+  margin: 0;
+  color: #475467;
+  font-weight: 600;
+}
+
+.purchase-panel {
+  padding-top: 1.4rem;
+}
+
+.purchase-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.purchase-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(320px, 1.2fr);
+  gap: 1rem;
+}
+
+.selected-event-card {
+  align-self: start;
+}
+
+.ticket-form {
+  align-self: start;
+}
+
+.purchase-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.7rem 0.8rem;
+  border: 1px dashed #9ca3af;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.result-box {
+  border: 1px solid #dbe4ef;
+  background: #f8fbff;
+  border-radius: 10px;
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.result-box p {
+  margin: 0;
+}
+
+.status-box {
+  background: #ecfeff;
+  border-color: #99f6e4;
+}
+
+.detail-box {
+  margin-top: 0.9rem;
+  background: #f7faff;
+}
+
+.inventory-history {
+  margin-top: 1.4rem;
+  border-top: 1px solid #d6dde8;
+  padding-top: 1rem;
+}
+
+.inventory-history h3 {
+  margin: 0;
+  color: #0f1d2d;
+}
+
+.payments-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.payment-lookup-form {
+  display: flex;
+  gap: 0.7rem;
+  align-items: end;
+  flex-wrap: wrap;
+}
+
+.payment-lookup-form label {
+  display: grid;
+  gap: 0.4rem;
+  font-weight: 600;
+  color: #172a3f;
+  min-width: 240px;
+}
+
+.payment-lookup-form input {
+  border: 1px solid #c9d2de;
+  border-radius: 10px;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.95rem;
+}
+
+.inventory-table-wrapper {
+  margin-top: 0.8rem;
+  overflow-x: auto;
+  border: 1px solid #e3e9f2;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.inventory-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px;
+}
+
+.inventory-table th,
+.inventory-table td {
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid #eef2f7;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.inventory-table thead th {
+  background: #f8fafc;
+  color: #1f2937;
+  font-weight: 700;
+}
+
+.inventory-table tbody tr:hover {
+  background: #f9fbff;
+}
+
+.row-current-ticket {
+  background: #ecfeff;
+}
+
+.status-pill {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.status-pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-reserved {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.status-confirmed {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-failed {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-cancelled {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+@media (max-width: 760px) {
+  .app-shell {
+    width: min(1120px, 100% - 1rem);
   }
-  to {
-    transform: rotate(360deg);
+
+  .form-grid {
+    grid-template-columns: 1fr;
   }
-}
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
+  .list-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
-}
 
-.card {
-  padding: 2em;
-}
+  .card-actions {
+    flex-direction: column;
+  }
 
-.read-the-docs {
-  color: #888;
+  .purchase-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .purchase-layout {
+    grid-template-columns: 1fr;
+  }
 }

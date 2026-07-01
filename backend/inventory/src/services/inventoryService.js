@@ -73,12 +73,13 @@ async function processPurchase(purchaseData) {
 
         const event = eventResult.rows[0];
 
-        // Entradas reservadas
+        // capacity ahora representa cupo restante real.
+        // Solo restamos reservadas para no sobre-reservar mientras el pago se procesa.
         const reservedResult = await pool.query(
             `SELECT COALESCE(SUM(quantity),0) AS booked
              FROM inventory
              WHERE event_id=$1
-             AND status IN ('reserved','confirmed')`,
+             AND status = 'reserved'`,
             [event_id]
         );
 

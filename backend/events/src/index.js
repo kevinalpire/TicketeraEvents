@@ -3,22 +3,8 @@ const express = require('express');
 require('dotenv').config();
 
 const app = express();
+
 app.use(express.json());
-
-const eventRoutes = require("./routes/eventRoutes");
-  // RUTAS DE EVENTOS
-app.use("/events", eventRoutes);
-
-const {
-    connectNATS,
-    getNatsConnection
-} = require("./services/natsService");
-
-const pool = require('./config/db');
-
-
-
-
 
 // CORS middleware
 app.use((req, res, next) => {
@@ -33,7 +19,16 @@ app.use((req, res, next) => {
     next();
 });
 
+const eventRoutes = require("./routes/eventRoutes");
+  // RUTAS DE EVENTOS
+app.use("/events", eventRoutes);
 
+const {
+    connectNATS,
+    getNatsConnection
+} = require("./services/natsService");
+
+const pool = require('./config/db');
 
 
 // GET PAYMENT FOR SPECIFIC INVENTORY

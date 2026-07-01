@@ -25,6 +25,8 @@ async function subscribeToPayments() {
 
         for await (const msg of reservedSub) {
 
+            let currentInventoryId = null;
+
             try {
 
                 const data = JSON.parse(sc.decode(msg.data));
@@ -37,6 +39,8 @@ async function subscribeToPayments() {
                     users,
                     quantity
                 } = data;
+
+                currentInventoryId = inventory_id;
 
                 // Buscar inventario y precio del evento
                 const inventoryResult = await pool.query(
@@ -59,15 +63,20 @@ async function subscribeToPayments() {
 
                 const amount = inventory.quantity * inventory.price;
 
-                // Simulación del pago (90% éxito)
-                const paymentSuccess = Math.random() > 0.1;
+                // Tasa de éxito configurable (por defecto 100% para demo estable).
+                // Si quieres volver a simulación, usa PAYMENT_SUCCESS_RATE=0.9
+                const successRate = Number(process.env.PAYMENT_SUCCESS_RATE || 1);
+                const paymentSuccess = Math.random() < successRate;
 
                 const transaction_id =
                     `TXN_${Date.now()}_${Math.random().toString(36).substring(2,9)}`;
 
                 if (paymentSuccess) {
 
-                    // Confirmar reserva
+                    // Confirmar pago + descontar cupo en una sola transaccion.
+                    // Si falla cualquiera de los pasos, no se aplica ninguno.
+                    await pool.query("BEGIN");
+
                     await pool.query(
                         `UPDATE inventory
                          SET status='confirmed',
@@ -76,7 +85,20 @@ async function subscribeToPayments() {
                         [inventory_id]
                     );
 
-                    // Registrar pago
+                    const capacityUpdate = await pool.query(
+                        `UPDATE events
+                         SET capacity = capacity - $1,
+                             updated_at = CURRENT_TIMESTAMP
+                         WHERE id = $2
+                           AND capacity >= $1
+                         RETURNING id, capacity`,
+                        [quantity, event_id]
+                    );
+
+                    if (capacityUpdate.rows.length === 0) {
+                        throw new Error("Not enough remaining capacity to confirm payment");
+                    }
+
                     await pool.query(
                         `INSERT INTO payments
                         (
@@ -95,6 +117,8 @@ async function subscribeToPayments() {
                             transaction_id
                         ]
                     );
+
+                    await pool.query("COMMIT");
 
                     console.log("✅ Payment confirmed");
 
@@ -161,6 +185,27 @@ async function subscribeToPayments() {
                 }
 
             } catch (err) {
+
+                try {
+                    await pool.query("ROLLBACK");
+                } catch (rollbackError) {
+                    console.error("Rollback Error:", rollbackError);
+                }
+
+                if (currentInventoryId) {
+                    try {
+                        await pool.query(
+                            `UPDATE inventory
+                             SET status='cancelled',
+                                 updated_at=CURRENT_TIMESTAMP
+                             WHERE id=$1
+                               AND status='reserved'`,
+                            [currentInventoryId]
+                        );
+                    } catch (cancelError) {
+                        console.error("Cancel Reserved Error:", cancelError);
+                    }
+                }
 
                 console.error("Payment Error:", err);
 
